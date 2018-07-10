@@ -93,6 +93,15 @@ static void stop_watching(){
 	MPI_T_pvar_session_free(&session);
 }
 
+static void char_repl(char *string, char *from, char *to){
+	int i = 0;
+	while(string[i]!='\0'){
+		if(string[i] == *from) string[i] = *to;
+		i++;
+	}
+}
+
+
 static int get_watched_var_index_with_class( char *var_name, char *var_class_name ){
 	int i;
 	int var_class;
@@ -172,7 +181,6 @@ static void print_pvar_buffer_all(){
 static void pvar_read_all(){
 	int i, j;
 	int size;
-	unsigned long long int zero = 0;
 	for(i = 0; i < pvar_num_watched; i++){
 		MPI_T_pvar_read(session, pvar_handles[i], read_value_buffer);
 		MPI_Type_size(perf_var_all[i].datatype, &size);
@@ -353,8 +361,12 @@ int MPI_Init(int *argc, char ***argv){
 	int set_default = 0;
 	if( (env_var_name != NULL )){
 		if(DEBUG)printf("Environment variable set: %s\n", env_var_name);
+
 		if(strlen(env_var_name) == 0){
 			set_default = 1;
+		} else{
+			//Feel free to extend this by any separator
+			if(strchr(env_var_name, ':') != NULL) char_repl(env_var_name, ":", ";");
 		}
 	}
 	else{
@@ -413,6 +425,7 @@ int MPI_Init(int *argc, char ***argv){
 		char *class_name;
 		for (i = 0; i < num; i++)
 		{
+			
 			memcpy((env_var_name + index), perf_var_all[i].name, strlen(perf_var_all[i].name));
 			index += (strlen(perf_var_all[i].name) );
 			memcpy((env_var_name + index), ":", strlen(":"));
@@ -428,7 +441,9 @@ int MPI_Init(int *argc, char ***argv){
 
 	/* Now, start session for those variables in the watchlist*/
 	pvar_num_watched = 0;
+
 	char *p = strtok(env_var_name, ";");
+
 	pvar_value_buffer = (unsigned long long int**)malloc(sizeof(unsigned long long int*) * (num + 1));
 	int max_count = -1;
 	int k;
