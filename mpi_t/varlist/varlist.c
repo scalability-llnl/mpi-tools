@@ -643,7 +643,8 @@ void list_cvars()
 				{
 					err=MPI_T_cvar_read(handle,&v_count);
 					CHECKERR("CVARREAD",err);
-					sprintf(value,"%lu",v_count);
+					long long int v_count_l = v_count;
+					sprintf(value,"%lld",v_count_l);
 				}
 				else if (dt==MPI_CHAR)
 				{
@@ -655,7 +656,7 @@ void list_cvars()
 				{
 					err=MPI_T_cvar_read(handle,&v_double);
 					CHECKERR("CVARREAD",err);
-					sprintf(value,"%d",v_double);
+					sprintf(value,"%f",v_double);
 				}
 				else
 				{
