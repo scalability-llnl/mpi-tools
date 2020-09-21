@@ -281,7 +281,8 @@ static void collect_range_with_loc_from_all_ranks(MPI_Op op){
 		free(out);
 }
 
-int MPI_Init(int *argc, char ***argv){
+static
+void gyan_init(){
 
 	if(DEBUG)printf("********** Interception starts **********\n");
 	int err, num, i, namelen, verb, varclass, bind, threadsup;
@@ -290,14 +291,8 @@ int MPI_Init(int *argc, char ***argv){
 	char name[STR_SZ + 1] = "";
 	int desc_len;
 	char desc[STR_SZ + 1] = "";
-	int mpi_init_return;
 	MPI_Datatype datatype;
 	MPI_T_enum enumtype;
-
-	/* Run MPI Initialization */
-	mpi_init_return = PMPI_Init(argc, argv);
-	if (mpi_init_return != MPI_SUCCESS)
-		return mpi_init_return;
 
 	/* get global rank */
 	PMPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -308,7 +303,7 @@ int MPI_Init(int *argc, char ***argv){
 	/* Run MPI_T Initialization */
 	err = MPI_T_init_thread(MPI_THREAD_SINGLE, &threadsup);
 	if (err != MPI_SUCCESS)
-		return mpi_init_return;
+		return;
 
 	/* Print thread support for MPI */
 	if(!rank) {
@@ -336,7 +331,7 @@ int MPI_Init(int *argc, char ***argv){
 	/* Create a session */
 	err = MPI_T_pvar_session_create(&session);
 	if (err != MPI_SUCCESS)
-		return mpi_init_return;
+		return;
 
 	/* get number of variables */
 	err = MPI_T_pvar_get_num(&num);
@@ -346,7 +341,7 @@ int MPI_Init(int *argc, char ***argv){
 	}
 
 	if (err != MPI_SUCCESS)
-		return mpi_init_return;
+		return;
 	total_num_of_var = num;
 	// Get the name of the environment variable to look for
 	env_var_name = getenv("MPIT_VAR_TO_TRACE");
@@ -456,7 +451,7 @@ int MPI_Init(int *argc, char ***argv){
 					err = MPI_T_pvar_start(session, pvar_handles[pvar_num_watched]);
 				}
 				if (err != MPI_SUCCESS) {
-					return mpi_init_return;
+					return;
 				}
 				pvar_num_watched++;
 			}
@@ -474,6 +469,31 @@ int MPI_Init(int *argc, char ***argv){
 	num_isend = 0;
 	num_recv = 0;
 	num_irecv = 0;
+	return;
+}
+
+
+int MPI_Init(int *argc, char ***argv){
+
+	int mpi_init_return;
+	/* Run MPI Initialization */
+	mpi_init_return = PMPI_Init(argc, argv);
+	if (mpi_init_return != MPI_SUCCESS)
+		return mpi_init_return;
+
+	gyan_init();
+	return mpi_init_return;
+}
+
+int MPI_Init_thread(int *argc, char ***argv, int thread_requested, int *thread_provided){
+
+	int mpi_init_return;
+	/* Run MPI Initialization */
+	mpi_init_return = PMPI_Init_thread(argc, argv, thread_requested, thread_provided);
+	if (mpi_init_return != MPI_SUCCESS)
+		return mpi_init_return;
+
+	gyan_init();
 	return mpi_init_return;
 }
 
